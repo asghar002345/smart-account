@@ -60,6 +60,15 @@ Deployed 2026-10-28 by `0x4f5D696b46F4946404A30869E28e8DaB04272DD6` (also the fa
 Factory stake in EntryPoint v0.7 (`0x0000000071727De22E5E9d8BAf0edAc6f37da032`): 0.01 ETH with a 1-day (86,400 s) unstake delay. Tx: [0xf0a77738…](https://base-sepolia.blockscout.com/tx/0xf0a77738006fde302e109f0baa61e7467008cd0d5090484804551a670521d0b0).
 EscrowExecutor is bound to the MilestoneEscrow at `0xD861488f2ba02df4047DDE41EFeCdCEd1FD6E528`.
 
+### E2E: sponsored userOps through Pimlico (2026-10-28)
+`e2e/e2e.ts` (viem 2.57.12, permissionless 0.5.2, custom `toSmartAccount` adapter) generates an ephemeral owner in memory and sends two userOps through EntryPoint v0.7, both sponsored by the Pimlico paymaster `0x777777777777AeC03fd955926DbF81597e66834C`. The account's ETH balance stayed at 0.
+
+- Account: [`0xf4e3050C87463386f55EaE70D83Cc86E50350aCd`](https://base-sepolia.blockscout.com/address/0xf4e3050C87463386f55EaE70D83Cc86E50350aCd)
+- Op 1 (deploys the account via initCode, then a 0-value batch): userOp `0x0b2cc70ea54f0a5ed2d90eb32dd8d8eb800f951261479a22e74a741d5cbb1f80`, tx [`0x9664be37…`](https://base-sepolia.blockscout.com/tx/0x9664be37188f97d2d9e03cdd6d303aa397cdaceedc9f17590b676648fd1927b0)
+- Op 2 (0-value single call): userOp `0x41ce32c95c72ef4a71b3ff4dbe63e8f9e8fad70b3477a6aea6ed29cee364e144`, tx [`0x88b65ee5…`](https://base-sepolia.blockscout.com/tx/0x88b65ee59a0e9ffbf051d1ea88474a8bce7e9e27b9f921959519bb9226ebefee)
+
+Run it with `cd e2e && npm ci && PIMLICO_API_KEY=... npm run e2e`. The key is read from the environment only and is redacted from error output. Results are written to `e2e/results.json`.
+
 ## Deploy
 `script/Deploy.s.sol` deploys the factory (and implementation) plus all modules, reading `PRIVATE_KEY` from the
 environment (see `.env.example`; `.env*` is git-ignored). Dry-run only:

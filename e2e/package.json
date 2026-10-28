@@ -1,0 +1,17 @@
+{
+  "name": "vaultlite-smart-account-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "tsx e2e.ts"
+  },
+  "dependencies": {
+    "permissionless": "0.5.2",
+    "viem": "2.57.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}
