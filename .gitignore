@@ -1,4 +1,17 @@
+# secrets
 .env
+.env*
+!.env.example
+*.secrets
+.secrets
+
+# foundry
 out/
 cache/
 broadcast/
+
+# tooling
+lcov.info
+coverage/
+crytic-export/
+node_modules/
