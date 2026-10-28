@@ -18,6 +18,8 @@ import { createSmartAccountClient } from "permissionless";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 
 const KEY = process.env.PIMLICO_API_KEY;
+const OUT = process.argv.includes("--demo") ? "./demo-results.json" : "./results.json";
+const EXPLORER = "https://base-sepolia.blockscout.com";
 const redact = (s: string) => (KEY ? s.split(KEY).join("***") : s);
 if (!KEY) { console.error("PIMLICO_API_KEY not set"); process.exit(1); }
 
@@ -122,13 +124,17 @@ async function main() {
     { to: ECDSA_VALIDATOR, value: 0n, data: encodeFunctionData({ abi: validatorAbi, functionName: "ownerOf", args: [address] }) },
   ] });
   const r1 = await smart.waitForUserOperationReceipt({ hash: h1 });
-  console.log("op1", h1, "tx", r1.receipt.transactionHash, "success", r1.success);
+  console.log("op1 userOp", h1, "success", r1.success);
+  console.log("  tx:", `${EXPLORER}/tx/${r1.receipt.transactionHash}`);
+  console.log("  userOp:", `https://jiffyscan.xyz/userOpHash/${h1}?network=base-sepolia`);
   results.ops.push({ kind: "deploy + 0-value batch", userOpHash: h1, txHash: r1.receipt.transactionHash, success: r1.success, paymaster: r1.paymaster });
 
   // op 2: 0-value single call on the deployed account
   const h2 = await smart.sendUserOperation({ calls: [{ to: owner.address, value: 0n, data: "0x" }] });
   const r2 = await smart.waitForUserOperationReceipt({ hash: h2 });
-  console.log("op2", h2, "tx", r2.receipt.transactionHash, "success", r2.success);
+  console.log("op2 userOp", h2, "success", r2.success);
+  console.log("  tx:", `${EXPLORER}/tx/${r2.receipt.transactionHash}`);
+  console.log("  account:", `${EXPLORER}/address/${address}`);
   results.ops.push({ kind: "0-value single call", userOpHash: h2, txHash: r2.receipt.transactionHash, success: r2.success, paymaster: r2.paymaster });
 
   const onchainOwner = await publicClient.readContract({ address: ECDSA_VALIDATOR, abi: validatorAbi, functionName: "ownerOf", args: [address] });
@@ -136,7 +142,7 @@ async function main() {
   results.onchainOwnerMatches = onchainOwner.toLowerCase() === owner.address.toLowerCase();
   results.accountBalanceWei = balance.toString();
   results.timestamp = new Date().toISOString();
-  writeFileSync(new URL("./results.json", import.meta.url), JSON.stringify(results, null, 2) + "\n");
+  writeFileSync(new URL(OUT, import.meta.url), JSON.stringify(results, null, 2) + "\n");
   console.log("owner matches:", results.onchainOwnerMatches, "account balance (wei):", balance.toString());
   if (!r1.success || !r2.success) process.exit(1);
 }

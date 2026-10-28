@@ -1,0 +1,27 @@
+{
+  "chainId": 84532,
+  "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+  "factory": "0xb5c86d7ec6a86074732e8b697a9f90cd8de0eff0",
+  "validator": "0x45b0db483849bf723fe288751297cddc29e7198b",
+  "account": "0x88b07484fCe5B2f42A28199321Dc6c4cBf827aa0",
+  "owner": "0x49AF0632222CfBB639963Bccd9bc9C66544f9324",
+  "ops": [
+    {
+      "kind": "deploy + 0-value batch",
+      "userOpHash": "0x0906b474d1fbb7049a3cd0ba12e3da5b788ed1a552cabf2e98b014e44b151064",
+      "txHash": "0xec6d829bbdf4b419680026f931ca0d08ae107278060c9c99e0732005105ad978",
+      "success": true,
+      "paymaster": "0x777777777777AeC03fd955926DbF81597e66834C"
+    },
+    {
+      "kind": "0-value single call",
+      "userOpHash": "0x2419685c46062fe9bf381e5954fec5c0e9eeff7206d52019ecbc0a8dcab2dd95",
+      "txHash": "0x90208eccb0c4af9703a488b45f4ef21cfa829336d27af1cf155215bb6cef1d77",
+      "success": true,
+      "paymaster": "0x777777777777AeC03fd955926DbF81597e66834C"
+    }
+  ],
+  "onchainOwnerMatches": true,
+  "accountBalanceWei": "0",
+  "timestamp": "2026-10-28T13:05:05.735Z"
+}
