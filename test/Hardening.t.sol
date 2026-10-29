@@ -151,6 +151,19 @@ contract HardeningTest is BaseTest {
         sessions.enableSession(c);
     }
 
+    /// @dev Bug found in review: a session allowlisting another module (e.g. ECDSAOwnerValidator.rotateOwner) let the
+    ///      session key take over the account, because the module sees msg.sender == account.
+    function test_session_cannotTargetModules() public {
+        address[3] memory mods = [address(ecdsa), address(recovery), address(escrowExec)];
+        for (uint256 i; i < mods.length; ++i) {
+            SessionKeyValidator.SessionConfig memory c = _cfg(bytes32(i + 100), 0);
+            c.permissions[0] = SessionKeyValidator.Permission(mods[i], ECDSAOwnerValidator.rotateOwner.selector);
+            vm.prank(address(acc));
+            vm.expectRevert(SessionKeyValidator.InvalidSession.selector);
+            sessions.enableSession(c);
+        }
+    }
+
     function testFuzz_session_overCapAlwaysRejected(uint128 cap, uint128 value) public {
         cap = uint128(bound(cap, 0, 5 ether));
         value = uint128(bound(value, uint256(cap) + 1, 10 ether));
