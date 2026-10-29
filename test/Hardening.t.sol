@@ -212,6 +212,21 @@ contract HardeningTest is BaseTest {
         assertEq(recovery.uninstallAllowedAt(address(acc)), 0);
     }
 
+    function test_recovery_cancelUninstall() public {
+        vm.startPrank(address(acc));
+        vm.expectRevert(RecoveryExecutor.NothingScheduled.selector);
+        recovery.cancelUninstall();
+        recovery.scheduleUninstall();
+        recovery.cancelUninstall();
+        vm.stopPrank();
+        assertEq(recovery.uninstallAllowedAt(address(acc)), 0);
+        vm.warp(block.timestamp + 30 days);
+        bytes memory call = abi.encodeCall(acc.uninstallModule, (MODULE_TYPE_EXECUTOR, address(recovery), ""));
+        vm.prank(EP_ADDR);
+        vm.expectRevert(RecoveryExecutor.Timelocked.selector);
+        acc.execute(bytes32(0), abi.encodePacked(address(acc), uint256(0), call));
+    }
+
     function test_recovery_reinstallAfterUninstall_freshState() public {
         vm.prank(address(acc));
         recovery.scheduleUninstall();
