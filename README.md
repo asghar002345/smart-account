@@ -73,12 +73,14 @@ Deploy script (`script/Deploy.s.sol`): it reads `PRIVATE_KEY` from the environme
 `--broadcast` it is a dry run.
 
 ## Test and coverage results (measured 2026-10-29)
-- `forge test`: **67 passed, 0 failed, 0 skipped** across 8 suites. That includes fuzz tests (512 runs), 5 handler-based
-  invariants (128 runs × depth 64) and 2 fork tests.
-- `forge coverage` on `src/`: lines **99.40%** (334/336), statements **98.37%** (422/429), branches **96.25%** (77/80),
-  functions **100%** (76/76). `SessionKeyValidator` is the only file below 100%.
-- Slither 0.11.6: no high or medium findings. Two were fixed and 23 low/informational ones are documented
-  (`AUDIT_NOTES.md`, `slither-report.txt`).
+- `forge test`: **85 passed, 0 failed, 0 skipped** across 9 suites (forge counts the invariant suite's 5 invariants
+  as one test). That includes fuzz tests (512 runs), 5 handler-based invariants (128 runs × depth 64) and 2 fork tests.
+- `forge coverage` on `src/`: lines **100%** (346/346), statements **98.88%** (442/447), branches **97.59%** (81/83),
+  functions **100%** (78/78). `SessionKeyValidator` is the only file below 100%.
+- Slither 0.11.6: no high-severity findings. The medium-severity `incorrect-equality` and `unused-return` results are
+  triaged as false positives. All results are documented in `AUDIT_NOTES.md` and `slither-report.txt`.
+- CI (`.github/workflows/ci.yml`) runs fmt check, build, tests and gitleaks. Gas snapshot: `.gas-snapshot`.
+- The deployed Base Sepolia contracts above predate the hardening fixes in `AUDIT_NOTES.md`.
 
 ## Security notes and limitations
 (Summarised from [`AUDIT_NOTES.md`](AUDIT_NOTES.md).)
@@ -88,7 +90,8 @@ Deploy script (`script/Deploy.s.sol`): it reads `PRIVATE_KEY` from the environme
   guardians are timelocked, and guardians can only rotate the ECDSA owner.
 - Uninstalling the last validator locks the account. The contracts don't prevent it, so the UI must.
 - Session spend and use counts are updated during validation, so an op that later reverts still counts.
-  Token-moving selectors need an explicit per-token cap. Only default exec type with single or batch calls is accepted.
+  Token-moving selectors need an explicit per-token cap. Session permissions can't target the account, the session
+  module, or any contract that reports itself as an ERC-7579 module. Only default exec type with single or batch calls is accepted.
 - Session and operator state is wiped on uninstall through a per-account epoch. Session IDs depend on that epoch.
 - ERC-1271 uses an ERC-7739-*style* account-bound rehash, not full ERC-7739 nested typed data.
 - Fork tests call `handleOps` directly, so they don't exercise bundler (ERC-7562) simulation. The live Pimlico e2e

@@ -195,7 +195,7 @@ contract SessionKeyValidator is IERC7579Validator {
         for (uint256 i; i < cfg.permissions.length; ++i) {
             Permission memory p = cfg.permissions[i];
             // never let a session key reconfigure the account or this module
-            if (p.target == account || p.target == address(this)) revert InvalidSession();
+            if (p.target == account || p.target == address(this) || _isModule(p.target)) revert InvalidSession();
             _allowed[_permKey(sessionId, p.target, p.selector)][account] = true;
         }
         for (uint256 i; i < cfg.tokenCaps.length; ++i) {
@@ -267,6 +267,19 @@ contract SessionKeyValidator is IERC7579Validator {
         if (newSpent > t.cap) return false;
         t.spent = uint128(newSpent);
         return true;
+    }
+
+    /// @dev True if `target` reports itself as an ERC-7579 module of any standard type (1..4). Modules trust
+    ///      msg.sender == account, so a session allowed to call one (e.g. `ECDSAOwnerValidator.rotateOwner`) could
+    ///      take over or reconfigure the account. Only used at enable time (not in validation, so ERC-7562 is unaffected).
+    function _isModule(address target) internal view returns (bool) {
+        if (target.code.length == 0) return false;
+        for (uint256 t = 1; t <= 4; ++t) {
+            (bool ok, bytes memory ret) =
+                target.staticcall{gas: 30_000}(abi.encodeWithSignature("isModuleType(uint256)", t));
+            if (ok && ret.length >= 32 && abi.decode(ret, (bool))) return true;
+        }
+        return false;
     }
 
     /// @dev Decodes `execute(bytes32,bytes)` calldata with bounds checks.
