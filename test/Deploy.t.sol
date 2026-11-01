@@ -12,7 +12,9 @@ import {EscrowExecutor} from "../src/modules/EscrowExecutor.sol";
 /// @notice Simulates the deploy script in-memory on a Base Sepolia fork with a throwaway key. Nothing is broadcast.
 contract DeployScriptTest is Test {
     function test_deployScript_simulated() public {
-        vm.createSelectFork(vm.envOr("BASE_SEPOLIA_RPC_URL", string("https://sepolia.base.org")), 51_235_699);
+        string memory rpc = vm.envOr("BASE_SEPOLIA_RPC_URL", string(""));
+        if (bytes(rpc).length == 0) rpc = "https://sepolia.base.org";
+        vm.createSelectFork(rpc, 51_235_699);
         vm.setEnv("PRIVATE_KEY", vm.toString(uint256(0xD3)));
         vm.deal(vm.addr(0xD3), 1 ether);
         (AccountFactory f,,, RecoveryExecutor r, EscrowExecutor e) = new Deploy().run();
