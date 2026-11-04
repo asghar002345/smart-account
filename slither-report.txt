@@ -3,18 +3,20 @@
 'forge build --build-info --deny never --skip ./test/** ./script/** --force' running (wd: /workspace/smart-account)
 INFO:Detectors:
 Detector: incorrect-equality
-RecoveryExecutor._validate(address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#253-262) uses a dangerous strict equality:
-	- n == 0 || n > MAX_GUARDIANS (src/modules/RecoveryExecutor.sol#255)
-RecoveryExecutor._validate(address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#253-262) uses a dangerous strict equality:
-	- threshold == 0 || threshold > n || uint256(threshold) * 2 <= n (src/modules/RecoveryExecutor.sol#257)
-RecoveryExecutor.applyGuardianUpdate(address) (src/modules/RecoveryExecutor.sol#131-142) uses a dangerous strict equality:
-	- p.executableAt == 0 (src/modules/RecoveryExecutor.sol#133)
-RecoveryExecutor.cancelGuardianUpdate() (src/modules/RecoveryExecutor.sol#124-128) uses a dangerous strict equality:
-	- _pendingConfig[msg.sender].executableAt == 0 (src/modules/RecoveryExecutor.sol#125)
-RecoveryExecutor.executeRecovery(address) (src/modules/RecoveryExecutor.sol#189-203) uses a dangerous strict equality:
-	- r.readyAt == 0 || block.timestamp < r.readyAt (src/modules/RecoveryExecutor.sol#192)
-RecoveryExecutor.onUninstall(bytes) (src/modules/RecoveryExecutor.sol#96-108) uses a dangerous strict equality:
-	- at == 0 || block.timestamp < at (src/modules/RecoveryExecutor.sol#98)
+RecoveryExecutor._validate(address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#261-270) uses a dangerous strict equality:
+	- n == 0 || n > MAX_GUARDIANS (src/modules/RecoveryExecutor.sol#263)
+RecoveryExecutor._validate(address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#261-270) uses a dangerous strict equality:
+	- threshold == 0 || threshold > n || uint256(threshold) * 2 <= n (src/modules/RecoveryExecutor.sol#265)
+RecoveryExecutor.applyGuardianUpdate(address) (src/modules/RecoveryExecutor.sol#132-143) uses a dangerous strict equality:
+	- p.executableAt == 0 (src/modules/RecoveryExecutor.sol#134)
+RecoveryExecutor.cancelGuardianUpdate() (src/modules/RecoveryExecutor.sol#125-129) uses a dangerous strict equality:
+	- _pendingConfig[msg.sender].executableAt == 0 (src/modules/RecoveryExecutor.sol#126)
+RecoveryExecutor.cancelUninstall() (src/modules/RecoveryExecutor.sol#153-157) uses a dangerous strict equality:
+	- uninstallAllowedAt[msg.sender] == 0 (src/modules/RecoveryExecutor.sol#154)
+RecoveryExecutor.executeRecovery(address) (src/modules/RecoveryExecutor.sol#197-211) uses a dangerous strict equality:
+	- r.readyAt == 0 || block.timestamp < r.readyAt (src/modules/RecoveryExecutor.sol#200)
+RecoveryExecutor.onUninstall(bytes) (src/modules/RecoveryExecutor.sol#97-109) uses a dangerous strict equality:
+	- at == 0 || block.timestamp < at (src/modules/RecoveryExecutor.sol#99)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
 INFO:Detectors:
 Detector: unused-return
@@ -24,43 +26,67 @@ SmartAccount.supportsExecutionMode(bytes32) (src/SmartAccount.sol#56-60) ignores
 SmartAccount._execute(Mode,bytes) (src/SmartAccount.sol#62-70) ignores return value by (callType,None,None,None) = mode.decodeMode() (src/SmartAccount.sol#67)
 ECDSAOwnerValidator._recover(bytes32,bytes) (src/modules/ECDSAOwnerValidator.sol#99-102) ignores return value by (signer,None,None) = ECDSA.tryRecoverCalldata(digest,sig) (src/modules/ECDSAOwnerValidator.sol#101)
 EscrowExecutor._exec(address,bytes) (src/modules/EscrowExecutor.sol#122-127) ignores return value by IERC7579Execution(account).executeFromExecutor(_MODE_SINGLE_DEFAULT,abi.encodePacked(address(escrow),uint256(0),data)) (src/modules/EscrowExecutor.sol#125-126)
-RecoveryExecutor.executeRecovery(address) (src/modules/RecoveryExecutor.sol#189-203) ignores return value by IERC7579Execution(account).executeFromExecutor(_MODE_SINGLE_DEFAULT,abi.encodePacked(address(validator),uint256(0),abi.encodeCall(ECDSAOwnerValidator.rotateOwner,(r.newOwner)))) (src/modules/RecoveryExecutor.sol#196-202)
+RecoveryExecutor.executeRecovery(address) (src/modules/RecoveryExecutor.sol#197-211) ignores return value by IERC7579Execution(account).executeFromExecutor(_MODE_SINGLE_DEFAULT,abi.encodePacked(address(validator),uint256(0),abi.encodeCall(ECDSAOwnerValidator.rotateOwner,(r.newOwner)))) (src/modules/RecoveryExecutor.sol#204-210)
 SessionKeyValidator.validateUserOp(PackedUserOperation,bytes32) (src/modules/SessionKeyValidator.sol#145-169) ignores return value by (signer,None,None) = ECDSA.tryRecoverCalldata(MessageHashUtils.toEthSignedMessageHash(userOpHash),sig) (src/modules/SessionKeyValidator.sol#161)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-return
 INFO:Detectors:
+Detector: calls-loop
+SessionKeyValidator._isModule(address) (src/modules/SessionKeyValidator.sol#275-283) has external calls inside a loop: (ok,ret) = target.staticcall{gas: 30_000}(abi.encodeWithSignature(isModuleType(uint256),t)) (src/modules/SessionKeyValidator.sol#278-279)
+	Calls stack containing the loop:
+		SessionKeyValidator.onInstall(bytes)
+		SessionKeyValidator._enable(address,SessionKeyValidator.SessionConfig)
+SessionKeyValidator._isModule(address) (src/modules/SessionKeyValidator.sol#275-283) has external calls inside a loop: (ok,ret) = target.staticcall{gas: 30_000}(abi.encodeWithSignature(isModuleType(uint256),t)) (src/modules/SessionKeyValidator.sol#278-279)
+	Calls stack containing the loop:
+		SessionKeyValidator.enableSession(SessionKeyValidator.SessionConfig)
+		SessionKeyValidator._enable(address,SessionKeyValidator.SessionConfig)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop
+INFO:Detectors:
+Detector: return-bomb
+SessionKeyValidator._isModule(address) (src/modules/SessionKeyValidator.sol#275-283) tries to limit the gas of an external call that controls implicit decoding
+	(ok,ret) = target.staticcall{gas: 30_000}(abi.encodeWithSignature(isModuleType(uint256),t)) (src/modules/SessionKeyValidator.sol#278-279)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#return-bomb
+INFO:Detectors:
 Detector: timestamp
-RecoveryExecutor.onInstall(bytes) (src/modules/RecoveryExecutor.sol#88-92) uses timestamp for comparisons
+RecoveryExecutor.onInstall(bytes) (src/modules/RecoveryExecutor.sol#89-93) uses timestamp for comparisons
 	Dangerous comparisons:
-	- _config[msg.sender].threshold != 0 (src/modules/RecoveryExecutor.sol#89)
-RecoveryExecutor.onUninstall(bytes) (src/modules/RecoveryExecutor.sol#96-108) uses timestamp for comparisons
+	- _config[msg.sender].threshold != 0 (src/modules/RecoveryExecutor.sol#90)
+RecoveryExecutor.onUninstall(bytes) (src/modules/RecoveryExecutor.sol#97-109) uses timestamp for comparisons
 	Dangerous comparisons:
-	- at == 0 || block.timestamp < at (src/modules/RecoveryExecutor.sol#98)
-RecoveryExecutor.cancelGuardianUpdate() (src/modules/RecoveryExecutor.sol#124-128) uses timestamp for comparisons
+	- at == 0 || block.timestamp < at (src/modules/RecoveryExecutor.sol#99)
+RecoveryExecutor.cancelGuardianUpdate() (src/modules/RecoveryExecutor.sol#125-129) uses timestamp for comparisons
 	Dangerous comparisons:
-	- _pendingConfig[msg.sender].executableAt == 0 (src/modules/RecoveryExecutor.sol#125)
-RecoveryExecutor.applyGuardianUpdate(address) (src/modules/RecoveryExecutor.sol#131-142) uses timestamp for comparisons
+	- _pendingConfig[msg.sender].executableAt == 0 (src/modules/RecoveryExecutor.sol#126)
+RecoveryExecutor.applyGuardianUpdate(address) (src/modules/RecoveryExecutor.sol#132-143) uses timestamp for comparisons
 	Dangerous comparisons:
-	- p.executableAt == 0 (src/modules/RecoveryExecutor.sol#133)
-	- block.timestamp < p.executableAt (src/modules/RecoveryExecutor.sol#134)
-RecoveryExecutor.executeRecovery(address) (src/modules/RecoveryExecutor.sol#189-203) uses timestamp for comparisons
+	- p.executableAt == 0 (src/modules/RecoveryExecutor.sol#134)
+	- block.timestamp < p.executableAt (src/modules/RecoveryExecutor.sol#135)
+RecoveryExecutor.cancelUninstall() (src/modules/RecoveryExecutor.sol#153-157) uses timestamp for comparisons
 	Dangerous comparisons:
-	- r.newOwner == address(0) (src/modules/RecoveryExecutor.sol#191)
-	- r.readyAt == 0 || block.timestamp < r.readyAt (src/modules/RecoveryExecutor.sol#192)
-RecoveryExecutor._approve(address,address) (src/modules/RecoveryExecutor.sol#223-234) uses timestamp for comparisons
+	- uninstallAllowedAt[msg.sender] == 0 (src/modules/RecoveryExecutor.sol#154)
+RecoveryExecutor.executeRecovery(address) (src/modules/RecoveryExecutor.sol#197-211) uses timestamp for comparisons
 	Dangerous comparisons:
-	- r.readyAt == 0 && approvals >= _config[account].threshold (src/modules/RecoveryExecutor.sol#230)
-RecoveryExecutor._clearRequest(address) (src/modules/RecoveryExecutor.sol#236-241) uses timestamp for comparisons
+	- r.newOwner == address(0) (src/modules/RecoveryExecutor.sol#199)
+	- r.readyAt == 0 || block.timestamp < r.readyAt (src/modules/RecoveryExecutor.sol#200)
+RecoveryExecutor._approve(address,address) (src/modules/RecoveryExecutor.sol#231-242) uses timestamp for comparisons
 	Dangerous comparisons:
-	- _request[account].newOwner != address(0) (src/modules/RecoveryExecutor.sol#237)
-RecoveryExecutor._setConfig(address,address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#243-251) uses timestamp for comparisons
+	- r.readyAt == 0 && approvals >= _config[account].threshold (src/modules/RecoveryExecutor.sol#238)
+RecoveryExecutor._clearRequest(address) (src/modules/RecoveryExecutor.sol#244-249) uses timestamp for comparisons
 	Dangerous comparisons:
-	- i < guardians.length (src/modules/RecoveryExecutor.sol#245)
-RecoveryExecutor._validate(address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#253-262) uses timestamp for comparisons
+	- _request[account].newOwner != address(0) (src/modules/RecoveryExecutor.sol#245)
+RecoveryExecutor._setConfig(address,address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#251-259) uses timestamp for comparisons
 	Dangerous comparisons:
-	- n == 0 || n > MAX_GUARDIANS (src/modules/RecoveryExecutor.sol#255)
-	- threshold == 0 || threshold > n || uint256(threshold) * 2 <= n (src/modules/RecoveryExecutor.sol#257)
-	- timelock < MIN_TIMELOCK || timelock > MAX_TIMELOCK (src/modules/RecoveryExecutor.sol#258)
-	- i < n (src/modules/RecoveryExecutor.sol#259)
-	- guardians[i] == address(0) (src/modules/RecoveryExecutor.sol#260)
+	- i < guardians.length (src/modules/RecoveryExecutor.sol#253)
+RecoveryExecutor._validate(address[],uint8,uint32) (src/modules/RecoveryExecutor.sol#261-270) uses timestamp for comparisons
+	Dangerous comparisons:
+	- n == 0 || n > MAX_GUARDIANS (src/modules/RecoveryExecutor.sol#263)
+	- threshold == 0 || threshold > n || uint256(threshold) * 2 <= n (src/modules/RecoveryExecutor.sol#265)
+	- timelock < MIN_TIMELOCK || timelock > MAX_TIMELOCK (src/modules/RecoveryExecutor.sol#266)
+	- i < n (src/modules/RecoveryExecutor.sol#267)
+	- guardians[i] == address(0) (src/modules/RecoveryExecutor.sol#268)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
-INFO:Slither:. analyzed (62 contracts with 102 detectors), 23 result(s) found
+INFO:Detectors:
+Detector: low-level-calls
+Low level call in SessionKeyValidator._isModule(address) (src/modules/SessionKeyValidator.sol#275-283):
+	- (ok,ret) = target.staticcall{gas: 30_000}(abi.encodeWithSignature(isModuleType(uint256),t)) (src/modules/SessionKeyValidator.sol#278-279)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Slither:. analyzed (62 contracts with 102 detectors), 29 result(s) found

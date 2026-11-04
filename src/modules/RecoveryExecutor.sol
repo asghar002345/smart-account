@@ -60,6 +60,7 @@ contract RecoveryExecutor is IERC7579Module, EIP712 {
     event GuardianUpdateScheduled(address indexed account, uint48 executableAt);
     event GuardianUpdateCancelled(address indexed account);
     event UninstallScheduled(address indexed account, uint48 allowedAt);
+    event UninstallCancelled(address indexed account);
     event RecoveryProposed(address indexed account, uint256 indexed nonce, address indexed newOwner, address guardian);
     event RecoveryApproved(address indexed account, uint256 indexed nonce, address indexed guardian);
     event RecoveryQueued(address indexed account, uint256 indexed nonce, uint48 readyAt);
@@ -146,6 +147,13 @@ contract RecoveryExecutor is IERC7579Module, EIP712 {
         uint48 at = uint48(block.timestamp + c.timelock);
         uninstallAllowedAt[msg.sender] = at;
         emit UninstallScheduled(msg.sender, at);
+    }
+
+    /// @notice Owner cancels a scheduled uninstall of this module (previously only possible via an active recovery).
+    function cancelUninstall() external {
+        if (uninstallAllowedAt[msg.sender] == 0) revert NothingScheduled();
+        delete uninstallAllowedAt[msg.sender];
+        emit UninstallCancelled(msg.sender);
     }
 
     /// @notice Owner cancels an in-flight recovery (proposed or queued). Also cancels a scheduled uninstall.
